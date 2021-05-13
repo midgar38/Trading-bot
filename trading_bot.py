@@ -106,6 +106,8 @@ period_slope=10
 MAX_NUM_ALGO_ORDERS=20
 #Number of orders per coin
 MAX_NUM_ORDERS=5
+#Trading fees in %
+trading_fees=0.075
 
 check_balance=exchange.fetch_balance()
 # print(check_balance['ETH'])
@@ -305,11 +307,11 @@ for i in pairs:
         amount_sell2=round(0.95*check_balance[str(i).split("/")[0]]['free'],7)
 
         #First checking if there is any open order to cancel. 
-        if len(open_orders) == 0 and amount_sell2*last_price_4h > 0.0001:
+        if len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
             order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
             time.sleep(10)
         
-        elif len(open_orders) == 0 and amount_sell2*last_price_4h < 0.0001:
+        elif len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
             print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
         elif len(open_orders) != 0 :
@@ -319,7 +321,7 @@ for i in pairs:
                 order1= exchange.cancel_order(open_orders[j].get("info").get("orderId"), str(i), params)
                 time.sleep(10)
 
-            if amount_sell2*last_price_4h > 0.0001:
+            if amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
                 order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                 append_list_as_row('test.csv', [now, str(i), 'sell', last_price_4h])
                 time.sleep(10)
@@ -327,7 +329,7 @@ for i in pairs:
             else:
                 print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
-        elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.0001:
+        elif len(open_orders) != 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
             print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
         else:
@@ -340,11 +342,11 @@ for i in pairs:
         amount_sell2=round(0.95*check_balance[str(i).split("/")[0]]['free'],7)
 
         #First, we look at if there is any open orders to cancel.
-        if len(open_orders) == 0 and amount_sell2*last_price_4h > 0.0001:
+        if len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
             order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
             time.sleep(10)
         
-        elif len(open_orders) == 0 and amount_sell2*last_price_4h < 0.0001:
+        elif len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
             print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
         elif len(open_orders) != 0 :
@@ -354,7 +356,7 @@ for i in pairs:
                 order1= exchange.cancel_order(open_orders[j].get("info").get("orderId"), str(i), params)
                 time.sleep(10)
 
-            if amount_sell2*last_price_4h > 0.0001:
+            if amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
                 order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                 append_list_as_row('test.csv', [now, str(i), 'sell', last_price_4h])
                 time.sleep(10)
@@ -362,7 +364,7 @@ for i in pairs:
             else:
                 print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
-        elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.0001:
+        elif len(open_orders) != 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
             print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
         else:
@@ -384,11 +386,11 @@ for i in pairs:
             print("Strong uptrend but time to sell, ADX is turning down, overheated market.")
             amount_sell2=round(0.95*check_balance[str(i).split("/")[0]]['free'],7)
 
-            if len(open_orders) == 0 and amount_sell2*last_price_4h > 0.0001:
+            if len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
                 order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                 time.sleep(10)
         
-            elif len(open_orders) == 0 and amount_sell2*last_price_4h < 0.0001:
+            elif len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
                 print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
             elif len(open_orders) != 0 :
@@ -398,7 +400,7 @@ for i in pairs:
                     order1= exchange.cancel_order(open_orders[j].get("info").get("orderId"), str(i), params)
                     time.sleep(10)
 
-                if amount_sell2*last_price_4h > 0.0001:
+                if amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
                     order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                     append_list_as_row('test.csv', [now, str(i), 'sell', last_price_4h])
                     time.sleep(10)
@@ -406,7 +408,7 @@ for i in pairs:
                 else:
                     print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
-            elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.0001:
+            elif len(open_orders) != 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
                 print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
             else:
@@ -437,9 +439,8 @@ try:
     # for i in range(2):
     #while loop to connect every one hour or so
     while True:
-        
-        time.sleep(3600)
 
+        print("Counter is", count)
         time.sleep(3600)
 
         #To handle connection errors
@@ -489,7 +490,6 @@ try:
         print("The routine can now start for count {}".format(count))
         now = datetime.now()
 
-<<<<<<< HEAD:trading_bot.py
         check_balance=exchange.fetch_balance()
         print("BTC left for trading: ", check_balance['BTC']['free'])
         # print("used fund", check_balance['BTC']['used'])
@@ -499,9 +499,6 @@ try:
 
         #How many open orders in total? 
         total_open_orders=[]
-=======
-        #How many open orders in total? you do not want too many of them!!!
->>>>>>> main:trading_bot_v2.py
         for i in pairs:
             open_orders=exchange.fetch_open_orders(str(i))
             #How many open orders in total?
@@ -656,11 +653,11 @@ try:
 
                 amount_sell2=round(0.95*check_balance[str(i).split("/")[0]]['free'],7)
                 #First checking if there is any open order to cancel. 
-                if len(open_orders) == 0 and amount_sell2*last_price_4h > 0.0001:
+                if len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
                     order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                     time.sleep(10)
                 
-                elif len(open_orders) == 0 and amount_sell2*last_price_4h < 0.0001:
+                elif len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
                     print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                 elif len(open_orders) != 0 :
@@ -670,7 +667,7 @@ try:
                         order1= exchange.cancel_order(open_orders[j].get("info").get("orderId"), str(i), params)
                         time.sleep(10)
 
-                    if amount_sell2*last_price_4h > 0.0001:
+                    if amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
                         order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                         append_list_as_row('test.csv', [now, str(i), 'sell', last_price_4h])
                         time.sleep(10)
@@ -678,7 +675,7 @@ try:
                     else:
                         print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
-                elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.0001:
+                elif len(open_orders) != 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
                     print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                 else:
@@ -689,11 +686,11 @@ try:
                 print("Strong downtrend: no more trading, just selling last minute rally.")
                 amount_sell2=round(0.95*check_balance[str(i).split("/")[0]]['free'],7)
 
-                if len(open_orders) == 0 and amount_sell2*last_price_4h > 0.0001:
+                if len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
                     order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                     time.sleep(10)
                 
-                elif len(open_orders) == 0 and amount_sell2*last_price_4h < 0.0001:
+                elif len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
                     print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                 elif len(open_orders) != 0 :
@@ -703,7 +700,7 @@ try:
                         order1= exchange.cancel_order(open_orders[j].get("info").get("orderId"), str(i), params)
                         time.sleep(10)
 
-                    if amount_sell2*last_price_4h > 0.0001:
+                    if amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
                         order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                         append_list_as_row('test.csv', [now, str(i), 'sell', last_price_4h])
                         time.sleep(10)
@@ -711,7 +708,7 @@ try:
                     else:
                         print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
-                elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.0001:
+                elif len(open_orders) != 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
                     print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                 else:
@@ -732,11 +729,11 @@ try:
                     print("Strong uptrend but ADX turning down, time to sell.")
                     amount_sell2=round(0.95*check_balance[str(i).split("/")[0]]['free'],7)
 
-                    if len(open_orders) == 0 and amount_sell2*last_price_4h > 0.0001:
+                    if len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
                         order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                         time.sleep(10)
                     
-                    elif len(open_orders) == 0 and amount_sell2*last_price_4h < 0.0001:
+                    elif len(open_orders) == 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
                         print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                     elif len(open_orders) != 0 :
@@ -746,7 +743,7 @@ try:
                             order1= exchange.cancel_order(open_orders[j].get("info").get("orderId"), str(i), params)
                             time.sleep(10)
 
-                        if amount_sell2*last_price_4h > 0.0001:
+                        if amount_sell2*last_price_4h*(1-trading_fees) > 0.00011:
                             order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                             append_list_as_row('test.csv', [now, str(i), 'sell', last_price_4h])
                             time.sleep(10)
@@ -754,7 +751,7 @@ try:
                         else:
                             print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
-                    elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.0001:
+                    elif len(open_orders) != 0 and amount_sell2*last_price_4h*(1-trading_fees) < 0.00011:
                         print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                     else:
