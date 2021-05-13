@@ -90,8 +90,8 @@ now = datetime.now()
 print("Welcome, today, it is ", now)
 
 #You can add as many pairs/symbols as necesary
-pairs = ['ETH/BTC', 'LINK/BTC', 'XTZ/BTC', 'LTC/BTC', 'ADA/BTC', 'ATOM/BTC', 'EOS/BTC', 'XMR/BTC','BNB/BTC', 'NANO/BTC', 'VET/BTC']
-symbol= ['ETH', 'LINK', 'XTZ', 'LTC', 'ADA', 'ATOM', 'EOS', 'XMR', 'BNB', 'NANO', 'VET']
+pairs = ['ETH/BTC', 'LINK/BTC', 'XTZ/BTC', 'LTC/BTC', 'ADA/BTC', 'ATOM/BTC', 'EOS/BTC', 'XMR/BTC','BNB/BTC', 'NANO/BTC', 'VET/BTC', 'BCH/BTC']
+symbol= ['ETH', 'LINK', 'XTZ', 'LTC', 'ADA', 'ATOM', 'EOS', 'XMR', 'BNB', 'NANO', 'VET','BCH']
 type = 'market'  # or 'market'
 # side = 'buy'  # or 'sell' or 'trailing-stop'
 # amount = 0.01
@@ -107,10 +107,14 @@ MAX_NUM_ALGO_ORDERS=20
 #Number of orders per coin
 MAX_NUM_ORDERS=5
 
-
 check_balance=exchange.fetch_balance()
 # print(check_balance['ETH'])
 # print(check_balance['ETH']['free'])
+print("BTC left for trading: ", check_balance['BTC']['free'])
+# print("used fund", check_balance['BTC']['used'])
+
+#Percentage risked on each trade: 2% * what is left in BTC on your account
+risk_percentage=0.02*check_balance['BTC']['free']
 
 #For production, standard buy/sell order
 params = {}
@@ -144,7 +148,7 @@ for i in pairs:
     try:
         candles_1d = exchange.fetch_ohlcv(i, '1d')
     except IndexError:
-                None
+        None
     myDict_1d[i] = candles_1d
     df=pd.DataFrame(candles_1d).from_dict(myDict_1d) 
     pairs_lists=df[i].tolist()
@@ -153,8 +157,23 @@ for i in pairs:
     #insertion of a pair column (first one here)
     df.insert(0, "Pair", [str(i) for j in range(len(df))], True) 
     # print(df)
+        
+    last_price_1d=df['Close'].tail(1).item()
+    print("Last price is", last_price_1d)
     
     #calculation ATR: to manage risk. How many ATR are you risking per trade? To be used for posiiton sizing.
+    #calculation of the daily ATR
+    atr = df.ta.atr(length=18)
+    # print("atr is", atr)
+    #Conversion from a pandas series to a pandas dataframe
+    atr_frame=atr.to_frame()
+    # print("ATR is", atr_frame)
+    last_atr=atr_frame.tail(1)['ATR_18'].item()
+    print("The latest ATR is", last_atr)
+    stop_value=3*last_atr
+    stop_loss=last_price_1d-stop_value
+    print("You can buy {} for the pair {}".format(risk_percentage/stop_value, str(i)))
+    print("Stop loss of {} for the pair {}".format(stop_loss, str(i)))
 
     #calculation of daily adx
     adx = df.ta.adx(length=18)
@@ -168,7 +187,6 @@ for i in pairs:
 
 
     x=[i for i in range(1,period_slope+1)]
-    
     #last prices over a period of a certain number of days
     last_price_1d=df['close'].tail(period).to_list() 
     print("Price over the last 18 days:", last_price_1d)
@@ -200,9 +218,14 @@ for i in pairs:
         print("The CMF is negative over the past 10 days based on the daily timeframe.")
 
     #candles_4h is a list of lists!
-    candles_4h = exchange.fetch_ohlcv(i, '4h')
+    try:
+        candles_4h = exchange.fetch_ohlcv(i, '4h')
+    except IndexError:
+        None
     #Definition of a dictionary to separate pairs
     myDict_4h[i] = candles_4h
+
+
     #Back to dataframes of lists
     df=pd.DataFrame(candles_4h).from_dict(myDict_4h) 
     pairs_lists=df[i].tolist()
@@ -211,8 +234,10 @@ for i in pairs:
     #insertion of a pair column (first one here) en position 0 donc.
     df.insert(0, "Pair", [str(i) for j in range(len(df))], True) 
     # print(df)
+
+    #calculation of the 4h ATR
     
-    #calculation of4h bbands, stdev = 2 by default ON A 4H BASIS this time.
+    #calculation of the 4h bbands, stdev = 2 by default ON A 4H BASIS this time.
     bbands_4h = df.ta.bbands(length=20)
     # print("bbands is", bbands_4h)
     #bbands stdev=4
@@ -227,26 +252,24 @@ for i in pairs:
     print("Last bbu 4h is", last_bbu_4h)
     print("Last bbm 4h is", last_bbm_4h)
     # print("Last bbw_2stdev is", bbw_2stdev)
+    print("Total number of open orders: ", len(total_open_orders))
+    print("Total number of open orders for the pairs: ", len(open_orders))
 
     last_price_4h=df['close'].tail(1).item()
     print("Last price is", last_price_4h)
 
     # if check_balance['BTC']['free'] > 0.0015 #0.0015 is to ensure that when we sell we will be above the
     #bare minimum in value i.e. 0.0001 BTC.
-    #Position sizing
-    amount_buy=round((0.1*check_balance['BTC']['free'])/last_price_4h,7)
-    #amount sell for the stop loss
-    amount_sell=round(0.9*amount_buy,7)
-
+ 
     #stop 4h lower BBANDS
-    stop_price_bbl=round(0.92*last_bbl_4h,7)
+    stop_price_bbl=round(0.9*last_bbl_4h,7)
     #print("Stop price is", stop_price)
     limit_price_bbl=round(float(0.99*stop_price_bbl),7)
     print("Limit price bbl is", (str(i), round(limit_price_bbl,7)))
     #print(round(limit_price,6))
 
     #stop 4h mid BBANDS
-    stop_price_bbm=round(0.92*last_bbm_4h,7)
+    stop_price_bbm=round(0.9*last_bbm_4h,7)
     #print("Stop price is", stop_price)
     limit_price_bbm=round(float(0.99*stop_price_bbm),7)
     print("Limit price bbm is", (str(i), round(limit_price_bbm,7)))
@@ -256,6 +279,15 @@ for i in pairs:
     params_bbl = {'stopPrice': stop_price_bbl}
     params_bbm = {'stopPrice': stop_price_bbm}
 
+    #ATR based stop-loss and limit price
+    params_atr = {'stopPrice': stop_loss}
+    limit_price_atr=round(float(0.99*stop_loss),7)
+
+    #Position sizing
+    amount_buy=round(risk_percentage/stop_value,7)
+    #amount sell for the stop loss
+    amount_sell=round(0.95*amount_buy,7)
+
     #Actual trading
     #Trendless markets --> ADX slope negative
     if model[0]<0 and last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.0015 and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and len(open_orders)+1<=MAX_NUM_ORDERS:
@@ -263,7 +295,7 @@ for i in pairs:
         print("Trendless market, opportunity to buy on the bbl.")
         order1 = exchange.create_order(str(i), type, 'buy', amount_buy, price, params)
         time.sleep(10)
-        order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_bbl, params=params_bbl)
+        order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_atr, params=params_atr)
         append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_bbl,7)])
         print("Pair {}: buy initial order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_price_bbl))
 
@@ -344,7 +376,7 @@ for i in pairs:
             order1 = exchange.create_order(str(i), type, 'buy', amount_buy, price, params)
             #time.sleep to prevent any errors on the exchange.
             time.sleep(10)
-            order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_bbm, params=params_bbm)
+            order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_atr, params=params_atr)
             append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_bbm,7)])
             print("Pair {}: buy initial order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_price_bbm))
         #Overheated market
@@ -385,7 +417,7 @@ for i in pairs:
             print("Strong uptrend underway, dip, opportunity to buy the bbl.")
             order1 = exchange.create_order(str(i), type, 'buy', amount_buy, price, params)
             time.sleep(10)
-            order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_bbl, params=params_bbl)
+            order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_atr, params=params_atr)
             append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_bbl,7)])
             print("Pair {}: buy initial order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_price_bbl))
 
@@ -405,6 +437,8 @@ try:
     # for i in range(2):
     #while loop to connect every one hour or so
     while True:
+
+        time.sleep(3600)
 
         #To handle connection errors
         url='https://api.binance.com/api/v3/exchangeInfo'
@@ -453,9 +487,15 @@ try:
         print("The routine can now start for count {}".format(count))
         now = datetime.now()
 
-        time.sleep(3600)
+        check_balance=exchange.fetch_balance()
+        print("BTC left for trading: ", check_balance['BTC']['free'])
+        # print("used fund", check_balance['BTC']['used'])
 
-        #How many open orders in total? you do not want too many of them!!!
+        #Percentage risked on each trade: 2% * what is left in BTC on your account
+        risk_percentage=0.02*check_balance['BTC']['free']
+
+        #How many open orders in total? 
+        total_open_orders=[]
         for i in pairs:
             open_orders=exchange.fetch_open_orders(str(i))
             #How many open orders in total?
@@ -463,12 +503,12 @@ try:
                 for j in range(len(open_orders)):
                     # print(open_orders[j].get("info").get("orderId"))
                     total_open_orders.append(open_orders[j].get("info").get("orderId"))
-            print("There is {} open orders for {}".format(len(open_orders), str(i)))
-                    
+                print("There is {} open orders for {}".format(len(open_orders), str(i)))
+                
         print("There is in total {} open orders".format(len(total_open_orders)))
-
         #Loop through pairs
         for i in pairs:
+            #Fetch open orders
             open_orders=exchange.fetch_open_orders(str(i))
             #candles_1d is a list of lists! # Sometimes error here, how to handle it ? If list is empty, return an error.
             try:
@@ -486,15 +526,28 @@ try:
             df.insert(0, "Pair", [str(i) for j in range(len(df))], True) 
             # print(df)
             
-            #calculation daily bbands
-            #bbands = df.ta.bbands(length=20)
-            #print("bbands is", bbands)
+            last_price_1d=df['Close'].tail(1).item()
+            print("Last price is", last_price_1d)
+            
+            #calculation ATR: to manage risk. How many ATR are you risking per trade? To be used for posiiton sizing.
+            #calculation of the daily ATR
+            atr = df.ta.atr(length=18)
+            # print("atr is", atr)
+            #Conversion from a pandas series to a pandas dataframe
+            atr_frame=atr.to_frame()
+            # print("ATR is", atr_frame)
+            last_atr=atr_frame.tail(1)['ATR_18'].item()
+            print("The latest ATR is", last_atr)
+            stop_value=3*last_atr
+            stop_loss=last_price_1d-stop_value
+            print("You can buy {} for the pair {}".format(risk_percentage/stop_value, str(i)))
+            print("Stop loss of {} for the pair {}".format(stop_loss, str(i)))
 
-            #calculation daily adx
+            #calculation of the daily adx
             adx = df.ta.adx(length=18)
             # print("adx is", adx)
 
-            #calculatiom daily CMF
+            #calculation of the daily CMF
             cmf = df.ta.cmf(length=20)
             #Conversion from a pandas series to a pandas dataframe
             cmf_frame=cmf.to_frame()
@@ -533,7 +586,11 @@ try:
                 print("The CMF is negative over the past 10 days based on the daily timeframe.")
 
             #candles_4h is a list of lists
-            candles_4h = exchange.fetch_ohlcv(i, '4h')
+            try:
+                candles_4h = exchange.fetch_ohlcv(i, '4h')
+            except IndexError:
+                None
+        
             myDict_4h[i] = candles_4h
             df=pd.DataFrame(candles_4h).from_dict(myDict_4h) 
             pairs_lists=df[i].tolist()
@@ -542,13 +599,15 @@ try:
             df.insert(0, "Pair", [str(i) for j in range(len(df))], True) 
             # print(df)
             
-            #calculation 4h bbands
+            #calculation of the 4h bbands
             bbands_4h = df.ta.bbands(length=20)
             # print("bbands is", bbands_4h)
 
             last_bbl_4h=bbands_4h.tail(1)['BBL_20_2.0'].item()
             last_bbu_4h=bbands_4h.tail(1)['BBU_20_2.0'].item()
             last_bbm_4h=bbands_4h.tail(1)['BBM_20_2.0'].item()
+            print("Total number of open orders: ", len(total_open_orders))
+            print("Total number of open orders for the pairs: ", len(open_orders))
 
             last_price_4h=df['close'].tail(1).item()
             print("Last price is", last_price_4h)
@@ -557,14 +616,14 @@ try:
             amount_sell=round(0.9*amount_buy,7)
 
             #stop lower BBANDS
-            stop_price_bbl=round(0.92*last_bbl_4h,7)
+            stop_price_bbl=round(0.9*last_bbl_4h,7)
             #print("Stop price is", stop_price)
             limit_price_bbl=round(float(0.99*stop_price_bbl),7)
             print("Limit price is", (str(i), round(limit_price_bbl,7)))
             #print(round(limit_price,6))
 
             #stop mid BBANDS
-            stop_price_bbm=round(0.92*last_bbm_4h,7)
+            stop_price_bbm=round(0.9*last_bbm_4h,7)
             #print("Stop price is", stop_price)
             limit_price_bbm=round(float(0.99*stop_price_bbm),7)
             print("Limit price bbm is", (str(i), round(limit_price_bbm,7)))
@@ -573,7 +632,6 @@ try:
             #params2 specific to the stoploss order (buy order)
             #params2 = {'stopPrice': stop_price}
             params_bbl = {'stopPrice': stop_price_bbl}
-
             params_bbm = {'stopPrice': stop_price_bbm}
 
             # Actual trading
@@ -712,6 +770,7 @@ try:
                 print("Pair {}: no position taken on {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
         count=count+1
+
 
 except KeyboardInterrupt:
 
