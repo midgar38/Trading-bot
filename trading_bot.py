@@ -437,6 +437,8 @@ try:
     # for i in range(2):
     #while loop to connect every one hour or so
     while True:
+        
+        time.sleep(3600)
 
         time.sleep(3600)
 
@@ -487,6 +489,7 @@ try:
         print("The routine can now start for count {}".format(count))
         now = datetime.now()
 
+<<<<<<< HEAD:trading_bot.py
         check_balance=exchange.fetch_balance()
         print("BTC left for trading: ", check_balance['BTC']['free'])
         # print("used fund", check_balance['BTC']['used'])
@@ -496,6 +499,9 @@ try:
 
         #How many open orders in total? 
         total_open_orders=[]
+=======
+        #How many open orders in total? you do not want too many of them!!!
+>>>>>>> main:trading_bot_v2.py
         for i in pairs:
             open_orders=exchange.fetch_open_orders(str(i))
             #How many open orders in total?
