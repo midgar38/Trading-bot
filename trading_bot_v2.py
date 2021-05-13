@@ -405,6 +405,8 @@ try:
     # for i in range(2):
     #while loop to connect every one hour or so
     while True:
+        
+        time.sleep(3600)
 
         #To handle connection errors
         url='https://api.binance.com/api/v3/exchangeInfo'
@@ -452,8 +454,6 @@ try:
 
         print("The routine can now start for count {}".format(count))
         now = datetime.now()
-
-        time.sleep(3600)
 
         #How many open orders in total? you do not want too many of them!!!
         for i in pairs:
