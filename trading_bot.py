@@ -430,7 +430,7 @@ try:
     while True:
         print("\n")
         print("Counter is", count)
-        time.sleep(10)
+        time.sleep(3600)
 
         #To handle connection errors
         url='https://api.binance.com/api/v3/exchangeInfo'
