@@ -428,8 +428,7 @@ try:
     # for i in range(2):
     #while loop to connect every one hour or so
     while True:
-        print("\n")
-        print("Counter is", count)
+        print("\n Counter is", count)
         time.sleep(3600)
 
         #To handle connection errors
