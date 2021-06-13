@@ -90,8 +90,8 @@ now = datetime.now()
 print("Welcome, today, it is ", now)
 
 #You can add as many pairs/symbols as necesary
-pairs = ['ETH/BTC', 'LINK/BTC', 'XTZ/BTC', 'LTC/BTC', 'ADA/BTC', 'ATOM/BTC', 'EOS/BTC', 'XMR/BTC','BNB/BTC', 'NANO/BTC', 'VET/BTC', 'BCH/BTC']
-symbol= ['ETH', 'LINK', 'XTZ', 'LTC', 'ADA', 'ATOM', 'EOS', 'XMR', 'BNB', 'NANO', 'VET','BCH']
+pairs = ['ETH/BTC', 'LINK/BTC', 'XTZ/BTC', 'LTC/BTC', 'ADA/BTC', 'ATOM/BTC', 'EOS/BTC', 'XMR/BTC','BNB/BTC', 'NANO/BTC', 'VET/BTC', 'BCH/BTC', 'XRP/BTC']
+symbol= ['ETH', 'LINK', 'XTZ', 'LTC', 'ADA', 'ATOM', 'EOS', 'XMR', 'BNB', 'NANO', 'VET','BCH', 'XRP']
 type = 'market'  # or 'market'
 # side = 'buy'  # or 'sell' or 'trailing-stop'
 # amount = 0.01
@@ -159,9 +159,10 @@ for i in pairs:
     #insertion of a pair column (first one here)
     df.insert(0, "Pair", [str(i) for j in range(len(df))], True) 
     # print(df)
-        
+    
+    print("\n")
     last_price_1d=df['Close'].tail(1).item()
-    print("Last price is", last_price_1d)
+    print("The latest price for the pair {} is {}.".format(str(i), last_price_1d))
     
     #calculation ATR: to manage risk. How many ATR are you risking per trade? To be used for posiiton sizing.
     #calculation of the daily ATR
@@ -171,22 +172,25 @@ for i in pairs:
     atr_frame=atr.to_frame()
     # print("ATR is", atr_frame)
     last_atr=atr_frame.tail(1)['ATR_18'].item()
-    print("The latest ATR is", last_atr)
-    stop_value=3*last_atr
-    stop_loss=last_price_1d-stop_value
-    print("You can buy {} for the pair {}".format(risk_percentage/stop_value, str(i)))
-    print("Stop loss of {} for the pair {}".format(stop_loss, str(i)))
+    print("The latest ATR is:", last_atr)
+    stop_value_trend=3*last_atr
+    stop_value_trendless=2*last_atr
 
-    #calculation of daily adx
+    stop_loss_trend=last_price_1d-stop_value_trend
+    stop_loss_trendless=last_price_1d-stop_value_trendless
+
+    # print("You can buy {} for the pair {}".format(risk_percentage/stop_value, str(i)))
+    # print("Stop loss of {} for the pair {}".format(stop_loss, str(i)))
+
+    #calculation of the daily adx
     adx = df.ta.adx(length=18)
     # print("adx is", adx)
 
-    #calculatiom daily CMF
+    #calculation of the daily CMF
     cmf = df.ta.cmf(length=20)
     #Conversion from a pandas series to a pandas dataframe
     cmf_frame=cmf.to_frame()
     # print("CMF is", cmf_frame)
-
 
     x=[i for i in range(1,period_slope+1)]
     #last prices over a period of a certain number of days
@@ -227,7 +231,6 @@ for i in pairs:
     #Definition of a dictionary to separate pairs
     myDict_4h[i] = candles_4h
 
-
     #Back to dataframes of lists
     df=pd.DataFrame(candles_4h).from_dict(myDict_4h) 
     pairs_lists=df[i].tolist()
@@ -262,44 +265,32 @@ for i in pairs:
 
     # if check_balance['BTC']['free'] > 0.0015 #0.0015 is to ensure that when we sell we will be above the
     #bare minimum in value i.e. 0.0001 BTC.
- 
-    #stop 4h lower BBANDS
-    stop_price_bbl=round(0.9*last_bbl_4h,7)
-    #print("Stop price is", stop_price)
-    limit_price_bbl=round(float(0.99*stop_price_bbl),7)
-    print("Limit price bbl is", (str(i), round(limit_price_bbl,7)))
-    #print(round(limit_price,6))
 
-    #stop 4h mid BBANDS
-    stop_price_bbm=round(0.9*last_bbm_4h,7)
-    #print("Stop price is", stop_price)
-    limit_price_bbm=round(float(0.99*stop_price_bbm),7)
-    print("Limit price bbm is", (str(i), round(limit_price_bbm,7)))
-    #print(round(limit_price,6))
+    #ATR based stop-losses and limit prices
+    params_atr_trend = {'stopPrice': stop_loss_trend}
+    limit_price_atr_trend=round(float(0.99*stop_loss_trend),7)
 
-    #params_bbl and params_bbm specific to the stoploss order (buy order)
-    params_bbl = {'stopPrice': stop_price_bbl}
-    params_bbm = {'stopPrice': stop_price_bbm}
-
-    #ATR based stop-loss and limit price
-    params_atr = {'stopPrice': stop_loss}
-    limit_price_atr=round(float(0.99*stop_loss),7)
+    params_atr_trendless = {'stopPrice': stop_loss_trendless}
+    limit_price_atr_trendless=round(float(0.99*stop_loss_trendless),7)
 
     #Position sizing
-    amount_buy=round(risk_percentage/stop_value,7)
+    amount_buy_trend=round(risk_percentage/stop_value_trend,7)
+    amount_buy_trendless=round(risk_percentage/stop_value_trendless,7)
+
     #amount sell for the stop loss
-    amount_sell=round(0.95*amount_buy,7)
+    amount_sell_trend=round(0.95*amount_buy_trend,7)
+    amount_sell_trendless=round(0.95*amount_buy_trendless,7)
 
     #Actual trading
     #Trendless markets --> ADX slope negative
     if model[0]<0 and last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.0015 and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and len(open_orders)+1<=MAX_NUM_ORDERS:
         
         print("Trendless market, opportunity to buy on the bbl.")
-        order1 = exchange.create_order(str(i), type, 'buy', amount_buy, price, params)
+        order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trendless, price, params)
         time.sleep(10)
-        order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_atr, params=params_atr)
-        append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_bbl,7)])
-        print("Pair {}: buy initial order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_price_bbl))
+        order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell_trendless, price = limit_price_atr_trendless, params=params_atr_trendless)
+        append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_atr_trendless,7)])
+        print("Pair {}: buy initial order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_loss_trendless))
 
     elif model[0]<0 and last_price_4h>0.995*last_bbu_4h: #and bbw_2stdev>0.1 else do not sell everyhting (half and then another half)
         #last_bbu>bought price!!!
@@ -375,12 +366,12 @@ for i in pairs:
 
         print("Strong uptrend: trading authorized. Channel breakouts strategy to be used")
         if last_price_4h>max(last_price_1d) and check_balance['BTC']['free'] > 0.0015 and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>15 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
-            order1 = exchange.create_order(str(i), type, 'buy', amount_buy, price, params)
+            order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trend, price, params)
             #time.sleep to prevent any errors on the exchange.
             time.sleep(10)
-            order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_atr, params=params_atr)
-            append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_bbm,7)])
-            print("Pair {}: buy initial order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_price_bbm))
+            order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell_trend, price = limit_price_atr_trend, params=params_atr_trend)
+            append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_atr_trend,7)])
+            print("Pair {}: buy initial order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_loss_trend))
         #Overheated market
         elif model[0] < 0.1 and model1[0]<0 and last_ADX>15 and last_ADX>last_DMP and last_ADX>last_DMN:
             print("Strong uptrend but time to sell, ADX is turning down, overheated market.")
@@ -417,11 +408,11 @@ for i in pairs:
         #If bounce on the bbl --> BUY
         elif last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.0015 and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>20 and model[0] > 0.1 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
             print("Strong uptrend underway, dip, opportunity to buy the bbl.")
-            order1 = exchange.create_order(str(i), type, 'buy', amount_buy, price, params)
+            order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trend, price, params)
             time.sleep(10)
-            order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_atr, params=params_atr)
-            append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_bbl,7)])
-            print("Pair {}: buy initial order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_price_bbl))
+            order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell_trend, price = limit_price_atr_trend, params=params_atr_trend)
+            append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_atr_trend,7)])
+            print("Pair {}: buy initial order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_loss_trend))
 
         else:
             print("Not the time yet to buy or sell. We need more confirmations of the beginning or the end of the current uptrend")
@@ -429,9 +420,7 @@ for i in pairs:
     else:
         print("Pair {}: no initial position taken on {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
-
 #Start of the while loop
-
 #handle keyboard interrupt
 try: 
 #Initializing count
@@ -439,8 +428,7 @@ try:
     # for i in range(2):
     #while loop to connect every one hour or so
     while True:
-
-        print("Counter is", count)
+        print("\n Counter is", count)
         time.sleep(3600)
 
         #To handle connection errors
@@ -528,7 +516,8 @@ try:
             #insertion of a pair column (first one here)
             df.insert(0, "Pair", [str(i) for j in range(len(df))], True) 
             # print(df)
-            
+
+            print("\n")
             last_price_1d=df['Close'].tail(1).item()
             print("Last price is", last_price_1d)
             
@@ -541,16 +530,20 @@ try:
             # print("ATR is", atr_frame)
             last_atr=atr_frame.tail(1)['ATR_18'].item()
             print("The latest ATR is", last_atr)
-            stop_value=3*last_atr
-            stop_loss=last_price_1d-stop_value
-            print("You can buy {} for the pair {}".format(risk_percentage/stop_value, str(i)))
-            print("Stop loss of {} for the pair {}".format(stop_loss, str(i)))
+            # print("You can buy {} for the pair {}".format(risk_percentage/stop_value, str(i)))
+            # print("Stop loss of {} for the pair {}".format(stop_loss, str(i)))
 
-            #calculation of the daily adx
+            stop_value_trend=3*last_atr
+            stop_value_trendless=2*last_atr
+
+            stop_loss_trend=last_price_1d-stop_value_trend
+            stop_loss_trendless=last_price_1d-stop_value_trendless
+
+            #Calculation of the daily adx
             adx = df.ta.adx(length=18)
             # print("adx is", adx)
 
-            #calculation of the daily CMF
+            #Calculation of the daily CMF
             cmf = df.ta.cmf(length=20)
             #Conversion from a pandas series to a pandas dataframe
             cmf_frame=cmf.to_frame()
@@ -614,39 +607,32 @@ try:
 
             last_price_4h=df['close'].tail(1).item()
             print("Last price is", last_price_4h)
+
+            #ATR based stop-losses and limit prices
+            params_atr_trend = {'stopPrice': stop_loss_trend}
+            limit_price_atr_trend=round(float(0.99*stop_loss_trend),7)
+
+            params_atr_trendless = {'stopPrice': stop_loss_trendless}
+            limit_price_atr_trendless=round(float(0.99*stop_loss_trendless),7)
+
             #Position sizing
-            amount_buy=round((0.1*check_balance['BTC']['free'])/last_price_4h,7)
-            amount_sell=round(0.9*amount_buy,7)
+            amount_buy_trend=round(risk_percentage/stop_value_trend,7)
+            amount_buy_trendless=round(risk_percentage/stop_value_trendless,7)
 
-            #stop lower BBANDS
-            stop_price_bbl=round(0.9*last_bbl_4h,7)
-            #print("Stop price is", stop_price)
-            limit_price_bbl=round(float(0.99*stop_price_bbl),7)
-            print("Limit price is", (str(i), round(limit_price_bbl,7)))
-            #print(round(limit_price,6))
-
-            #stop mid BBANDS
-            stop_price_bbm=round(0.9*last_bbm_4h,7)
-            #print("Stop price is", stop_price)
-            limit_price_bbm=round(float(0.99*stop_price_bbm),7)
-            print("Limit price bbm is", (str(i), round(limit_price_bbm,7)))
-            #print(round(limit_price,6))
-
-            #params2 specific to the stoploss order (buy order)
-            #params2 = {'stopPrice': stop_price}
-            params_bbl = {'stopPrice': stop_price_bbl}
-            params_bbm = {'stopPrice': stop_price_bbm}
+            #amount sell for the stop loss
+            amount_sell_trend=round(0.95*amount_buy_trend,7)
+            amount_sell_trendless=round(0.95*amount_buy_trendless,7)
 
             # Actual trading
             #Trendless markets --> ADX slope negative
             if model[0]<0 and last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.0015 and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and len(open_orders)+1<=MAX_NUM_ORDERS:
                 print("Trendless market, opportunity to buy on the bbl.")
 
-                order1 = exchange.create_order(str(i), type, 'buy', amount_buy, price, params)
+                order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trendless, price, params)
                 time.sleep(10)
-                order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_bbl, params=params_bbl)
-                append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_bbl,7)])
-                print("Pair {}: buy order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_price_bbl))
+                order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell_trendless, price = limit_price_atr_trendless, params=params_atr_trendless)
+                append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_atr_trendless,7)])
+                print("Pair {}: buy order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_loss_trendless))
 
             elif model[0]<0 and last_price_4h>0.995*last_bbu_4h:
                 print("Trendless market, opportunity to sell on the bbu.")
@@ -719,11 +705,11 @@ try:
 
                 print("Strong uptrend: trading authorized. Channel breakouts strategy to be used")
                 if last_price_4h>max(last_price_1d) and check_balance['BTC']['free'] > 0.0015 and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>15 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
-                    order1 = exchange.create_order(str(i), type, 'buy', amount_buy, price, params)
+                    order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trend, price, params)
                     time.sleep(10)
-                    order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_bbm, params=params_bbm)
-                    append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_bbm,7)])
-                    print("Pair {}: buy order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_price_bbm))
+                    order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell_trend, price = limit_price_atr_trend, params=params_atr_trend)
+                    append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_atr_trend,7)])
+                    print("Pair {}: buy order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_loss_trend))
                 #Overheated market
                 elif model[0] < 0.1 and model1[0]<0 and last_ADX>15 and last_ADX>last_DMP and last_ADX>last_DMN:
                     print("Strong uptrend but ADX turning down, time to sell.")
@@ -759,12 +745,12 @@ try:
 
                 elif last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.0015 and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>20 and model[0] > 0.1 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
                     print("Strong uptrend, temporary dip, buying the bbl.")
-                    order1 = exchange.create_order(str(i), type, 'buy', amount_buy, price, params)
+                    order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trend, price, params)
                     #temporisation pour eviter des erreurs?
                     time.sleep(10)
-                    order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell, price = limit_price_bbl, params=params_bbl)
-                    append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_bbl,7)])
-                    print("Pair {}: buy initial order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_price_bbl))
+                    order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell_trend, price = limit_price_atr_trend, params=params_atr_trend)
+                    append_list_as_row('test.csv', [now, str(i), 'buy', last_price_4h, round(limit_price_atr_trend,7)])
+                    print("Pair {}: buy initial order sent on {} at a price of {} BTC with a stop-loss at {}".format(str(i), now, last_price_4h, stop_loss_trend))
                 
                 else:
                     print("Not the time yet to buy or sell. We need more confirmation of the beginning or the end of the current uptrend")
