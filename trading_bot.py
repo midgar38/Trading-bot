@@ -255,7 +255,7 @@ for i in pairs:
 
     stop_loss_trend=last_price_4h-stop_value_trend
     stop_loss_trendless=last_price_4h-stop_value_trendless
-    
+
     #calculation of the 4h bbands, stdev = 2 by default ON A 4H BASIS this time.
     bbands_4h = df_4h.ta.bbands(length=20)
     # print("bbands is", bbands_4h)
@@ -300,7 +300,7 @@ for i in pairs:
 
     #Actual trading
     #Trendless markets --> ADX slope negative, longer term model
-    if model[0]<0 and last_ADX<25 and last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.0015 and amount_buy_trendless*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and len(open_orders)+1<=MAX_NUM_ORDERS:
+    if model[0]<0 and last_ADX<25 and last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.00015 and amount_buy_trendless*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and len(open_orders)+1<=MAX_NUM_ORDERS:
         
         print("Trendless market, opportunity to buy on the bbl.")
         order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trendless, price, params)
@@ -320,6 +320,7 @@ for i in pairs:
             time.sleep(10)
         
         elif len(open_orders) == 0 and amount_sell2*last_price_4h < 0.00015:
+
             print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
         elif len(open_orders) != 0 :
@@ -330,6 +331,7 @@ for i in pairs:
                 time.sleep(10)
 
             if amount_sell2*last_price_4h > 0.00015:
+              
                 order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                 append_list_as_row('test.csv', [now, str(i), 'sell', last_price_4h])
                 time.sleep(10)
@@ -338,6 +340,7 @@ for i in pairs:
                 print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
         elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.00015:
+
             print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
         else:
@@ -373,6 +376,7 @@ for i in pairs:
                 print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
         elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.00015:
+
             print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
         else:
@@ -382,7 +386,7 @@ for i in pairs:
     elif last_DMP>last_DMN:
 
         print("Strong uptrend: trading authorized. Channel breakouts strategy to be used")
-        if model[0]>0 and last_price_4h>max(last_price_1d_period) and check_balance['BTC']['free'] > 0.0015 and amount_buy_trend*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>25 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
+        if model[0]>0 and last_price_4h>max(last_price_1d_period) and check_balance['BTC']['free'] > 0.00015 and amount_buy_trend*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>25 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
             order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trend, price, params)
             #time.sleep to prevent any errors on the exchange.
             time.sleep(10)
@@ -399,6 +403,7 @@ for i in pairs:
                 time.sleep(10)
         
             elif len(open_orders) == 0 and amount_sell2*last_price_4h < 0.00015:
+
                 print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
             elif len(open_orders) != 0 :
@@ -409,6 +414,7 @@ for i in pairs:
                     time.sleep(10)
 
                 if amount_sell2*last_price_4h > 0.00015:
+
                     order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                     append_list_as_row('test.csv', [now, str(i), 'sell', last_price_4h])
                     time.sleep(10)
@@ -417,13 +423,14 @@ for i in pairs:
                     print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
             elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.00015:
+
                 print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
             else:
                 print("Pair {}, no option here on {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
         #If bounce on the bbl --> BUY
-        elif model[0]>0.1 and last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.0015 and amount_buy_trend*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>25 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
+        elif model[0]>0.1 and last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.00015 and amount_buy_trend*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>25 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
             print("Strong uptrend underway, dip, opportunity to buy the bbl.")
             order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trend, price, params)
             time.sleep(10)
@@ -653,7 +660,7 @@ try:
 
             # Actual trading
             #Trendless markets --> ADX slope negative
-            if model[0]<0 and last_ADX<25 and last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.0015 and amount_buy_trendless*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and len(open_orders)+1<=MAX_NUM_ORDERS:
+            if model[0]<0 and last_ADX<25 and last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.00015 and amount_buy_trendless*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and len(open_orders)+1<=MAX_NUM_ORDERS:
                 print("Trendless market, opportunity to buy on the bbl.")
                 order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trendless, price, params)
                 time.sleep(10)
@@ -671,6 +678,7 @@ try:
                     time.sleep(10)
                 
                 elif len(open_orders) == 0 and amount_sell2*last_price_4h < 0.00015:
+
                     print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                 elif len(open_orders) != 0 :
@@ -681,6 +689,7 @@ try:
                         time.sleep(10)
 
                     if amount_sell2*last_price_4h > 0.00015:
+
                         order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                         append_list_as_row('test.csv', [now, str(i), 'sell', last_price_4h])
                         time.sleep(10)
@@ -689,6 +698,7 @@ try:
                         print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                 elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.00015:
+
                     print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                 else:
@@ -704,6 +714,7 @@ try:
                     time.sleep(10)
                 
                 elif len(open_orders) == 0 and amount_sell2*last_price_4h < 0.00015:
+
                     print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                 elif len(open_orders) != 0 :
@@ -714,6 +725,7 @@ try:
                         time.sleep(10)
 
                     if amount_sell2*last_price_4h > 0.00015:
+
                         order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                         append_list_as_row('test.csv', [now, str(i), 'sell', last_price_4h])
                         time.sleep(10)
@@ -722,6 +734,7 @@ try:
                         print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                 elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.00015:
+
                     print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                 else:
@@ -731,7 +744,8 @@ try:
             elif model[0]>0 and last_DMP>last_DMN:
 
                 print("Strong uptrend: trading authorized. Channel breakouts strategy to be used")
-                if last_price_4h>max(last_price_1d_period) and check_balance['BTC']['free'] > 0.0015 and amount_buy_trend*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>25 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
+                if last_price_4h>max(last_price_1d_period) and check_balance['BTC']['free'] > 0.00015 and amount_buy_trend*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>25 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
+
                     order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trend, price, params)
                     time.sleep(10)
                     order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell_trend, price = limit_price_atr_trend, params=params_atr_trend)
@@ -747,6 +761,7 @@ try:
                         time.sleep(10)
                     
                     elif len(open_orders) == 0 and amount_sell2*last_price_4h < 0.00015:
+
                         print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                     elif len(open_orders) != 0 :
@@ -757,6 +772,7 @@ try:
                             time.sleep(10)
 
                         if amount_sell2*last_price_4h > 0.00015:
+
                             order2 = exchange.create_order(str(i), type, 'sell', amount_sell2, price, params)
                             append_list_as_row('test.csv', [now, str(i), 'sell', last_price_4h])
                             time.sleep(10)
@@ -765,13 +781,14 @@ try:
                             print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                     elif len(open_orders) != 0 and amount_sell2*last_price_4h < 0.00015:
+
                         print("Pair {}: not enough funds for selling {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                     else:
                         print("Pair {}, no option here on {}. The last price is {} BTC".format(str(i), now, last_price_4h))
 
                 #If bounce on the bbl --> BUY
-                elif last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.0015 and amount_buy_trend*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>25 and model[0] > 0.1 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
+                elif last_price_4h<1.009*last_bbl_4h and check_balance['BTC']['free'] > 0.00015 and amount_buy_trend*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>25 and model[0] > 0.1 and len(open_orders)+1<=MAX_NUM_ORDERS and model1[0]>0:
                     print("Strong uptrend, temporary dip, buying the bbl.")
                     order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trend, price, params)
                     #temporisation pour eviter des erreurs?
