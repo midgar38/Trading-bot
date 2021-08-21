@@ -552,7 +552,7 @@ for i in pairs:
 
         #If bounce on the daily Tenkan-Sen --> BUY
         elif model[0]>0.1 and last_price_4h<1.009*kijun_sen_1d and check_balance['BTC']['free'] > 0.00015 and amount_buy_trend*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>25 and len(open_orders)+1<=MAX_NUM_ORDERS_TRENDING and model1[0]>0:
-            print("Strong uptrend underway, dip, opportunity to buy the 4h bbl.")
+            print("Strong uptrend underway, dip, opportunity to buy the daily kijun.")
             order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trend, price, params)
             time.sleep(10)
             order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell_trend, price = limit_price_atr_trend, params=params_atr_trend)
@@ -1043,7 +1043,7 @@ try:
                 
                 #If bounce on the daily Tenkan-Sen --> BUY
                 elif model[0]>0.1 and last_price_4h<1.009*kijun_sen_1d and check_balance['BTC']['free'] > 0.00015 and amount_buy_trend*last_price_4h<check_balance['BTC']['free'] and len(total_open_orders)+1<=MAX_NUM_ALGO_ORDERS and last_ADX>25 and len(open_orders)+1<=MAX_NUM_ORDERS_TRENDING and model1[0]>0:
-                    print("Strong uptrend underway, dip, opportunity to buy the 4h bbl.")
+                    print("Strong uptrend underway, dip, opportunity to buy the daily kijun.")
                     order1 = exchange.create_order(str(i), type, 'buy', amount_buy_trend, price, params)
                     time.sleep(10)
                     order2 = exchange.create_order(str(i), 'STOP_LOSS_LIMIT', side='sell', amount=amount_sell_trend, price = limit_price_atr_trend, params=params_atr_trend)
